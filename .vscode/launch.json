@@ -6,30 +6,11 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Current File",
+            "name": "Launch with Arguments Prompt",
             "request": "launch",
-            "mainClass": "${file}"
-        },
-        {
-            "type": "java",
-            "name": "App",
-            "request": "launch",
-            "mainClass": "App",
-            "projectName": "ProgettoASD_ConnectX_1de81c35"
-        },
-        {
-            "type": "java",
-            "name": "CXGame",
-            "request": "launch",
-            "mainClass": "connectx.CXGame",
-            "projectName": "ProgettoASD_ConnectX_1de81c35"
-        },
-        {
-            "type": "java",
-            "name": "CXPlayerTester",
-            "request": "launch",
-            "mainClass": "connectx.CXPlayerTester",
-            "projectName": "ProgettoASD_ConnectX_1de81c35"
+            "mainClass": "",
+            "args": "-cp \"..\" connectx.CXGame 6 7 4 connectx.FardoPlayer.CXFardoPlayer connectx.L0.L0"
         }
     ]
 }
+

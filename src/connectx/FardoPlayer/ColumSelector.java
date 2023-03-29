@@ -23,11 +23,12 @@ public class ColumSelector {
             for (Integer i : board.getAvailableColumns()){
                 board.markColumn(i);
                 
-                eval = Integer.max(alphaBeta(board, false, alpha, beta), eval);
+                eval = Integer.max(alphaBeta(board.copy(), false, alpha, beta), eval);
                 alpha = Integer.max(alpha, eval);
                 if (beta <= alpha){
                     break;
                 }
+                board.unmarkColumn();
             }
         } else {
             eval = Integer.MAX_VALUE;
@@ -35,11 +36,12 @@ public class ColumSelector {
             for (Integer i : board.getAvailableColumns()){
                 board.markColumn(i);
                 
-                eval = Integer.min(alphaBeta(board, true, alpha, beta), eval);
+                eval = Integer.min(alphaBeta(board.copy(), true, alpha, beta), eval);
                 beta = Integer.min(beta, eval);
                 if (beta <= alpha){
                     break;
                 }
+                board.unmarkColumn();
             }
         }
 
@@ -47,18 +49,18 @@ public class ColumSelector {
     }
 
     public int evaulateBoard(CXBoard board, boolean maximizingPlayer){
-    /*
-    *  -5000 per la loss
-    *   5000 win
-    *   1 pareggio
-    *   0 indefinito
-    */
+        /*
+        *  -5000 per la loss
+        *   5000 win
+        *   1 pareggio
+        *   0 indefinito
+        */
 
         int eval = board.gameState() == CXGameState.WINP1 &&  maximizingPlayer ? 5000 : 0;
         eval = board.gameState() == CXGameState.WINP2 && !maximizingPlayer ? 5000 : eval;
         eval = board.gameState() == CXGameState.WINP1 && !maximizingPlayer ? -5000 : eval;
         eval = board.gameState() == CXGameState.WINP2 && maximizingPlayer ? -5000 : eval;
-        eval = board.gameState() == CXGameState.DRAW ? 1 : eval;
+        eval  = board.gameState() == CXGameState.DRAW ? 1 : eval;
         //eval = board.gameState() == CXGameState.OPEN ? 0 : eval;
 
         return eval;
