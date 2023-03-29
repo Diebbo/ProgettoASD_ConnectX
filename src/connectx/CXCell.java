@@ -52,4 +52,8 @@ public class CXCell {
 		this.j = j;
 		this.state = state;
 	}
+
+	public String toString(){
+		return "Checking Mat[" + this.j + "][" + this.i + "] ->" + this.state;
+	}
 }

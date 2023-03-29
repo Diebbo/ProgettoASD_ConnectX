@@ -9,11 +9,12 @@ public class ColumSelector {
     public ColumSelector() {
         // this.maximizingPlayer = maximizingPlayer;
     }
-
+    
     public Integer alphaBeta(CXBoard board, boolean maximizingPlayer, int alpha, int beta){
         if (board.gameState() != CXGameState.OPEN)
             return evaulateBoard(board, maximizingPlayer);
         
+        System.out.println(board.toString());
         Integer eval;
 
         if (maximizingPlayer){
@@ -54,7 +55,9 @@ public class ColumSelector {
     */
 
         int eval = board.gameState() == CXGameState.WINP1 &&  maximizingPlayer ? 5000 : 0;
+        eval = board.gameState() == CXGameState.WINP2 && !maximizingPlayer ? 5000 : eval;
         eval = board.gameState() == CXGameState.WINP1 && !maximizingPlayer ? -5000 : eval;
+        eval = board.gameState() == CXGameState.WINP2 && maximizingPlayer ? -5000 : eval;
         eval = board.gameState() == CXGameState.DRAW ? 1 : eval;
         //eval = board.gameState() == CXGameState.OPEN ? 0 : eval;
 

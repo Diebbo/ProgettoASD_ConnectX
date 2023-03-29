@@ -91,6 +91,10 @@ public class CXBoard {
 
 	}
 
+	public String toString(){
+		return this.getLastMove().toString();
+	}
+
 	/**
 	 * Resets the CXBoard
 	 */
