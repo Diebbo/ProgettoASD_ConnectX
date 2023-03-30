@@ -36,20 +36,16 @@ public class CXFardoPlayer implements CXPlayer{
             B.markColumn(i);
             System.out.println("Controllando la colonna ..." + i);
 
-            Integer currentColumnEvaluation = selector.alphaBeta(B.copy(), first, -1, 1);
+            Integer currentColumnEvaluation = selector.alphaBetaDepth(B.copy(), first, -1, 1, 3);
             
             if (currentColumnEvaluation > evalColumns){
                 evalColumns = currentColumnEvaluation;
                 selectedColumn = i;
-                break;
             }
             B.unmarkColumn();
         } 
 
         
-
-
-
         return selectedColumn;
     }
     
