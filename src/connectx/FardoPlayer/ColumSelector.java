@@ -132,7 +132,10 @@ public class ColumSelector {
         } else if (board.gameState() == CXGameState.DRAW){
             eval = 1;
         } else if (board.gameState() == CXGameState.OPEN){
-            eval = checkLinearPattherns(board, board.getLastMove()); // - check for the linear pattherns
+            if (maximizingPlayer)
+                eval = checkLinearPattherns(board, board.getLastMove()); // - check for the linear pattherns
+            else 
+                eval = -checkLinearPattherns(board, board.getLastMove()); // - check for the linear pattherns
             System.out.println("patthern: " + eval);
         }
 
