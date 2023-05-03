@@ -40,16 +40,16 @@ CXPlayerTester application:
 
 - Output score only:
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.FardoPlayer.CXFardoPlayer
 
 
 - Verbose output
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.FardoPlayer.CXFardoPlayer -v
 
 
 - Verbose output and customized timeout (1 sec) and number of game repetitions (10 rounds)
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.FardoPlayer.CXFardoPlayer -v -t 1 -r 10
 
 ## vitto gay

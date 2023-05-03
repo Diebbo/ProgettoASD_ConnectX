@@ -111,24 +111,18 @@ public class ColumSelector {
         *   0 indefinito
         */
 
-        /* int eval = board.gameState() == CXGameState.WINP1 &&  maximizingPlayer ? 5000 : 0;
-        eval = board.gameState() == CXGameState.WINP2 && !maximizingPlayer ? 5000 : eval;
-        eval = board.gameState() == CXGameState.WINP1 && !maximizingPlayer ? -5000 : eval;
-        eval = board.gameState() == CXGameState.WINP2 && maximizingPlayer ? -5000 : eval;
-        eval  = board.gameState() == CXGameState.DRAW ? 1 : eval;
-        //eval = board.gameState() == CXGameState.OPEN ? 0 : eval;
-         */
+        Integer eval = Integer.MIN_VALUE;
 
-        Integer eval = 0;
-
-        if (board.gameState() == CXGameState.WINP1 && maximizingPlayer){
-            eval = 5000;
+        /* if (board.gameState() == CXGameState.WINP1 && maximizingPlayer){
+            eval = Integer.MAX_VALUE;
         } else if (board.gameState() == CXGameState.WINP2 && !maximizingPlayer){
-            eval = 5000;
+            eval = Integer.MAX_VALUE;
         } else if (board.gameState() == CXGameState.WINP1 && !maximizingPlayer){
-            eval = 5000; // cerco di evitare di perdere
+            eval = Integer.MAX_VALUE; // cerco di evitare di perdere
         } else if (board.gameState() == CXGameState.WINP2 && maximizingPlayer){
-            eval = 5000;
+            eval = Integer.MAX_VALUE; */
+        if (board.gameState() == CXGameState.WINP1 || board.gameState() == CXGameState.WINP2){
+            eval = maximizingPlayer ? Integer.MAX_VALUE : Integer.MIN_VALUE; // cerco di evitare di perdere o di vincere
         } else if (board.gameState() == CXGameState.DRAW){
             eval = 1;
         } else if (board.gameState() == CXGameState.OPEN){
@@ -136,7 +130,7 @@ public class ColumSelector {
                 eval = checkLinearPattherns(board, board.getLastMove()); // - check for the linear pattherns
             else 
                 eval = -checkLinearPattherns(board, board.getLastMove()); // - check for the linear pattherns
-            System.out.println("patthern: " + eval);
+            //System.out.println("patthern: " + eval);
         }
 
         return eval;
@@ -227,6 +221,7 @@ public class ColumSelector {
 
         for (Integer i : directions){
             eval = Integer.max(eval, i);
+            //System.out.println("eval: " + eval);
         }
         
         return eval;
