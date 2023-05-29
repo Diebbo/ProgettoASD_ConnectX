@@ -39,15 +39,14 @@ public class CXFardoPlayer implements CXPlayer{
     //un alpha beta pruning che forse ha tipo circa senso
 
     public int AlphaBeta(CXBoard T, boolean playerA, int alpha, int beta, int depth) {
-        if (depth == 0 || T.numOfFreeCells()==0) {
+        if (depth == 0 || T.gameState() != CXGameState.OPEN) {
             int eval = staticEval(T);
-            //piuttosto che una static eval della posizione potrebbe essere preferibile una valutazione definitiva che giochi la partita fino alla fine.
             return eval;
         } else if (playerA) { // MAX player
             int eval = Integer.MIN_VALUE;
             Integer[] columns = T.getAvailableColumns();
             for (Integer c : columns) {
-                CXGameState tempGameState = T.markColumn(c);
+                T.markColumn(c);
                 eval = Math.max(eval, AlphaBeta(T, false, alpha, beta, depth - 1));
                 alpha = Math.max(eval, alpha);
                 T.unmarkColumn();
