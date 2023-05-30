@@ -47,7 +47,7 @@ public class CXFardoPlayer implements CXPlayer{
 
     //static eval dummy
     public int staticEval(CXBoard B,boolean playerA){
-
+        // usando AphaBeta posso assumere: non ho vinto e tocca all'avversario
         if (playerA) {
 
 
@@ -135,6 +135,9 @@ public class CXFardoPlayer implements CXPlayer{
     }
     
 
+
+
+    
     /* 
     public void IterativeDeepening (CXBoard T, boolean playerA) {
         START = System.currentTimeMillis();
