@@ -22,6 +22,7 @@ The `JAVA PROJECTS` view allows you to manage your dependencies. More details ca
 - Command-line compile.  In the connectx/ directory run::
 
 		javac -cp ".." *.java */*.java
+		javac -cp ".." CXFardoPlayer.java CXFardoPlayer.java
 
 
 CXGame application:
@@ -29,11 +30,13 @@ CXGame application:
 - Human vs Computer.  In the connectx/ directory run:
 	
 		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
+		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer
 
 
 - Computer vs Computer. In the connectx/ directory run:
 
 		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
+		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L1.L1
 
 
 CXPlayerTester application:
@@ -41,6 +44,7 @@ CXPlayerTester application:
 - Output score only:
 
 	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
+	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.CXFardoPlayer connectx.L1.L1
 
 
 - Verbose output
