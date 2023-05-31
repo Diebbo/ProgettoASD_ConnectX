@@ -64,4 +64,4 @@ CXPlayerTester application:
 
 	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
 
-## vitto gay
+## vitto unico che lavora
