@@ -39,6 +39,7 @@ CXGame application:
 
 		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
 		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L1.L1
+		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L2.L2
 
 
 CXPlayerTester application:

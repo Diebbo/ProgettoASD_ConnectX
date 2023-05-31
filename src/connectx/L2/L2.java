@@ -3,6 +3,8 @@ package connectx.L2;
 import connectx.CXPlayer;
 import connectx.CXBoard;
 import connectx.CXGameState;
+import connectx.CXCell;
+import connectx.CXCellState;
 import java.util.concurrent.TimeoutException;
 import java.util.List;
 import java.util.ArrayList;
@@ -12,9 +14,9 @@ public class L2 implements CXPlayer{
     private Integer startingDepth = 10;
     private int TIMEOUT;
     private long START;
-    private int M;
-    private int N;
-    private int K;
+    private int M; // numero di righe
+    private int N; // numero di colonne
+    private int K; // numero di pedine da allineare per vincere
 
 	/* Default empty constructor */
 
@@ -37,7 +39,13 @@ public class L2 implements CXPlayer{
         
 		
         //IterativeDeepening(B, first);
-        return alphaBetaCaller(B, startingDepth, first);
+        if (B.numOfMarkedCells()==0) {
+            return N/2;
+        }
+        else {
+            return alphaBetaCaller(B, startingDepth, first);
+        }
+        
 
 	}
 
@@ -45,10 +53,25 @@ public class L2 implements CXPlayer{
 	public String playerName() {
 		return "L2";
 	}
+
     private void checktime() throws TimeoutException {
 		if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (1/ N))
 			throw new TimeoutException();
 	} 
+
+
+
+    private int stateConverter(CXGameState state) {
+        if (state == CXGameState.WINP1) {
+            return Integer.MAX_VALUE;
+        }
+        else if (state == CXGameState.WINP2) {
+            return Integer.MIN_VALUE;
+        }
+        else {
+            return 0;
+        }
+    }
 
 
     private int alphaBetaCaller (CXBoard B, int depth, boolean playerA) {
@@ -64,14 +87,28 @@ public class L2 implements CXPlayer{
         for (Integer c : columns) {
             B.markColumn(c);
             int recEval = AlphaBetaForbiddenColumns(B, !playerA, Integer.MIN_VALUE, Integer.MAX_VALUE, depth-1);
+            
             B.unmarkColumn();
+            /* sto center bias funziona come me (molto male :( )
+            int n = N/2;
+            int centerBias  = c-n; // se è grande è lontano dal centro
+            if (centerBias < 0) {
+                centerBias = -centerBias;
+            }
+            */
+            
             if (playerA) {
+                //recEval = recEval - centerBias;
+                System.out.println("colonna: " + c + " eval: " + recEval);
                 if (recEval > eval) {
                     eval = recEval;
                     move = c;
                 }
+                
             }
             else {
+                //recEval = recEval + centerBias;
+                System.out.println("colonna: " + c + " eval: " + recEval);
                 if (recEval < eval) {
                     eval = recEval;
                     move = c;
@@ -123,7 +160,7 @@ public class L2 implements CXPlayer{
                 }
             }
             //FINE TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            //colonne proibite.
+            /////////////////////////////////////colonne proibite.
             int colonne_proibite = 0;
             for (Integer c : columns) {
                 B.markColumn(c);
@@ -152,7 +189,7 @@ public class L2 implements CXPlayer{
                 B.unmarkColumn();
             }
             punteggio = punteggio - (100*colonne_proibite*colonne_proibite);
-
+            /////////////////////////////////////////////////fine colonne proibite.
 
             //colonne obbligate MIE, posso assumere di averne libere più di una.
             List<Integer> obbligatorie = new ArrayList<Integer>();
@@ -186,8 +223,67 @@ public class L2 implements CXPlayer{
             }
             punteggio = punteggio - 1000*obbligatorie.size();
 
+            //Inizio center bias
+            CXCell ultimaMossa = B.getLastMove();
+            // colonna = ultimaMossa.j
+            
+            int n = N/2;
+            int centerBias  = ultimaMossa.j-n; // se è grande è lontano dal centro
+            if (centerBias < 0) {
+                centerBias = -centerBias;
+            }
+            centerBias =  centerBias*10;
+            punteggio = punteggio - centerBias;
+            ///////////Adjacensies check (è una valutazione più sulla mossa che sulla posizione ma cionondimeno la ritengo rilevante)
+            //controllo orizzontale, ricordo che SO di non aver vinto.
+            int y = ultimaMossa.i;
+            int x = ultimaMossa.j;
+            int laterali = 0;
+            for (int i = Math.max(0,x-K+2); i<Math.min(M,x+K-2);i++) {
+                if (B.cellState(y,i) == CXCellState.P2) {
+                    if (i<x) {
+                        laterali = 0;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                else {
+                    if (B.cellState(y,i) == CXCellState.P1) {
+                        laterali++;
+                    }
+                }
+            }
+            //controllo verticale
+            int verticali = 0;
+            for (int i = 0; i< Math.min(y,K-2); i++) {
+                if (B.cellState(y-i,x) == CXCellState.P2) {
+                    break;
+                }
+                else {
+                    if (B.cellState(y-i,x) == CXCellState.P1) {
+                        verticali++;
+                    }
+                }
+            }
+            //controllo diagonale da fare (rn non ho voglia)
+            int obliqui1 = 0;
 
-            return 1 + punteggio;
+
+
+
+
+
+
+
+
+
+
+
+
+
+            punteggio = punteggio + 1000*laterali + 1000*verticali + 1000*obliqui1;
+            return punteggio;
         }
 
         else {//////////////////////////////////////////////////////////Analisi per il minimizer
@@ -220,7 +316,7 @@ public class L2 implements CXPlayer{
                 }
             }
             //FINE TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            ////////////////////////////////////////////////////colonne proibite.
+            /////////////////////////////////////colonne proibite.
             for (Integer c : columns) {
                 B.markColumn(c);
                 CXGameState state = B.gameState();
@@ -281,7 +377,55 @@ public class L2 implements CXPlayer{
                 return Integer.MAX_VALUE-2;
             }
             punteggio = punteggio + 1000*obbligatorie.size();
-            return -1 + punteggio;
+
+            //Inizio center bias
+            CXCell ultimaMossa = B.getLastMove();
+            // colonna = ultimaMossa.j
+            int n = N/2;
+            int centerBias  = ultimaMossa.j-n; // se è grande è lontano dal centro
+            if (centerBias < 0) {
+                centerBias = -centerBias;
+            }
+            centerBias =  centerBias*10;
+            punteggio = punteggio + centerBias;
+            //Fine center bias
+            //controllo laterale
+            int y = ultimaMossa.i;
+            int x = ultimaMossa.j;
+            int laterali = 0;
+            for (int i = Math.max(0,x-K+2); i<Math.min(M,x+K-2);i++) {
+                if (B.cellState(y,i) == CXCellState.P1) {
+                    if (i<x) {
+                        laterali = 0;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                else {
+                    if (B.cellState(y,i) == CXCellState.P2) {
+                        laterali++;
+                    }
+                }
+            }
+            //controllo verticale
+            int verticali = 0;
+            for (int i = 0; i< Math.min(y,K-2); i++) {
+                if (B.cellState(y-i,x) == CXCellState.P1) {
+                    break;
+                }
+                else {
+                    if (B.cellState(y-i,x) == CXCellState.P2) {
+                        verticali++;
+                    }
+                }
+            }
+            //controllo diagonale da fare (rn non ho voglia)
+            int obliqui1 = 0;
+            
+
+            punteggio = punteggio - 1000*laterali - 1000*verticali - 1000*obliqui1;
+            return punteggio;
 
             
         }
@@ -329,19 +473,7 @@ public class L2 implements CXPlayer{
                             for (int i = 0; i <= iterazioni; i++) {
                                 T.unmarkColumn();
                             }
-                            if (state == CXGameState.WINP1) {
-                                return Integer.MAX_VALUE;
-                            }
-                            else {
-                                if (state == CXGameState.WINP2) {
-                                    return Integer.MIN_VALUE;
-                                }
-                                else {
-                                    
-                                    return 0;
-                                    
-                                }
-                            }
+                            return stateConverter(state);
                         }
                         else {
                             if (playerA) { /////////////////////// MAX player
@@ -359,17 +491,20 @@ public class L2 implements CXPlayer{
                                     }
                                 }
                                 //un return che abbassa leggermente il peso delle mosse mentre si propagano (perdere in una mossa è peggio che perdere in 2 mosse)
-                                if (eval > 0) {
+                                //return eval;
+                                ///* 
+                                if (eval > 1) {
                                     return eval-1;
                                 }
                                 else {
-                                    if (eval < 0) {
+                                    if (eval < -1) {
                                         return eval+1;
                                     }
                                     else {
                                         return eval;
                                     }
                                 }
+                                //*/
                             } 
 
                             else { //////////////////////////// MIN player
@@ -387,17 +522,20 @@ public class L2 implements CXPlayer{
                                     }
                                 }
                                 //un return che abbassa leggermente il peso delle mosse mentre si propagano (perdere in una mossa è peggio che perdere in 2 mosse)
-                                if (eval > 0) {
+                                //return eval;
+                                ///* 
+                                if (eval > 1) {
                                     return eval-1;
                                 }
                                 else {
-                                    if (eval < 0) {
+                                    if (eval < -1) {
                                         return eval+1;
                                     }
                                     else {
                                         return eval;
                                     }
                                 }
+                                //*/
                             }
                         }
                     }
