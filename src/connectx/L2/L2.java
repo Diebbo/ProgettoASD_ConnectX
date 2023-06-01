@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public class L2 implements CXPlayer{
     private boolean first;
-    private Integer startingDepth = 10;
+    private Integer startingDepth = 8;
     private int TIMEOUT;
     private long START;
     private int M; // numero di righe
@@ -127,7 +127,7 @@ public class L2 implements CXPlayer{
 
     //static eval basata sul numero di colonne proibite
     public int staticEval(CXBoard B,boolean playerA){
-        // usando AphaBeta posso assumere: non ho vinto e tocca a me.
+        // usando AphaBeta posso assumere: non ho vinto ne perso e tocca a me.
         if (playerA) { ///////////////////////////////////////////////////////Analisi per il maximizer
 
             int punteggio = 0;
@@ -145,43 +145,24 @@ public class L2 implements CXPlayer{
                 for (int i = 0; i <= iterazioni; i++) {
                     B.unmarkColumn();
                 }
-                if (state == CXGameState.WINP1) {
-                    return Integer.MAX_VALUE;
-                }
-                else {
-                    if (state == CXGameState.WINP2) {
-                        return Integer.MIN_VALUE;
-                    }
-                    else {
-                        
-                        return 0;
-                        
-                    }
-                }
+                return stateConverter(state);
             }
             //FINE TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            /////////////////////////////////////colonne proibite.
+            /////////////////////////////////////colonne proibite e win in 1.
             int colonne_proibite = 0;
             for (Integer c : columns) {
                 B.markColumn(c);
                 CXGameState state = B.gameState();
-                if (state != CXGameState.OPEN) {
-                    if (state == CXGameState.WINP1)  {
-                        B.unmarkColumn();
-                        return Integer.MAX_VALUE;
-                    }
-                    else {
-                        return 0;
-                    }
+                if (state != CXGameState.OPEN) { // mie possibili win in 1
+                    B.unmarkColumn();
+                    return stateConverter(state);
                 }
-                if ((!B.fullColumn(c))&& B.gameState() == CXGameState.OPEN) {
+                if ((!B.fullColumn(c))&& B.gameState() == CXGameState.OPEN) { // seconda metà dell' and è ridondante (credo)
                     B.markColumn(c);
                     if (B.gameState() == CXGameState.WINP2) {
-                        B.unmarkColumn();
-                        B.unmarkColumn();
+                        
                         //c diventa una colonna proibita PER ME p1
                         colonne_proibite++;
-                        return Integer.MIN_VALUE+1;
                     }
                     B.unmarkColumn();
                     
@@ -266,23 +247,69 @@ public class L2 implements CXPlayer{
                     }
                 }
             }
-            //controllo diagonale da fare (rn non ho voglia)
+            //controllo diagonale da fare : quattro cicli che controllano le quattro mezze diagonali possibili
+            /*
+             * \   /   //esploro così, prima la diagonale da sinistra a destra verso il basso poi quella da destra a sinistra verso l'alto
+             *  \ /
+             *   O
+             *  / \
+             * /   \
+             * 
+             */
+
             int obliqui1 = 0;
+            // up left
+            int tempcounter = Math.min(Math.min(x,K-1),M-y-1);
+            for (int i = 0; i < tempcounter; i++) {
+                if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P2) {
+                    obliqui1 = 0;
+                }
+                else {
+                    if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P1) {
+                        obliqui1++;
+                    }
+                }
+            }
+            //down right
+            tempcounter = Math.min(Math.min(N-x-1,K-1),y);
+            for (int i = 1; i <= tempcounter; i++) {
+                if (B.cellState(y-i,x+i) == CXCellState.P2) {
+                    break;
+                }
+                else {
+                    if (B.cellState(y-i,x+i) == CXCellState.P1) {
+                        obliqui1++;
+                    }
+                }
+            }
 
+            int obliqui2 = 0;
+            //down left
+            tempcounter = Math.min(Math.min(x,K-1),y);
+            for (int i = 0; i < tempcounter; i++) {
+                if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P2) {
+                    obliqui2 = 0;
+                }
+                else {
+                    if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P1) {
+                        obliqui2++;
+                    }
+                }
+            }
+            //up right
+            tempcounter = Math.min(Math.min(N-x-1,K-1),M-y-1);
+            for (int i = 1; i <= tempcounter; i++) {
+                if (B.cellState(y+i,x+i) == CXCellState.P2) {
+                    break;
+                }
+                else {
+                    if (B.cellState(y+i,x+i) == CXCellState.P1) {
+                        obliqui2++;
+                    }
+                }
+            }
 
-
-
-
-
-
-
-
-
-
-
-
-
-            punteggio = punteggio + 1000*laterali + 1000*verticali + 1000*obliqui1;
+            punteggio = punteggio + 1000*laterali*laterali + 1000*verticali*verticali + 1000*obliqui1*obliqui1 + 1000*obliqui2*obliqui2;
             return punteggio;
         }
 
@@ -321,22 +348,15 @@ public class L2 implements CXPlayer{
                 B.markColumn(c);
                 CXGameState state = B.gameState();
                 if (state != CXGameState.OPEN) {
-                    if (state == CXGameState.WINP2)  {
-                        B.unmarkColumn();
-                        return Integer.MIN_VALUE;
-                    }
-                    else {
-                        return 0;
-                    }   
+                    B.unmarkColumn();
+                    return stateConverter(state);  
                 }
                 if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) {
                     B.markColumn(c);
                     if (B.gameState() == CXGameState.WINP1) {
-                        B.unmarkColumn();
-                        B.unmarkColumn();
+                        
                         //c diventa una colonna proibita PER ME p2
                         colonne_proibite++;
-                        return Integer.MAX_VALUE-1;
                     }
                     B.unmarkColumn();
                     
@@ -376,7 +396,7 @@ public class L2 implements CXPlayer{
             if (obbligatorie.size() > 1) {
                 return Integer.MAX_VALUE-2;
             }
-            punteggio = punteggio + 1000*obbligatorie.size();
+            punteggio = punteggio + 100000*obbligatorie.size();
 
             //Inizio center bias
             CXCell ultimaMossa = B.getLastMove();
@@ -421,10 +441,69 @@ public class L2 implements CXPlayer{
                 }
             }
             //controllo diagonale da fare (rn non ho voglia)
+            /*
+             * \   /   //esploro così, prima la diagonale da sinistra a destra verso il basso poi quella da destra a sinistra verso l'alto
+             *  \ /
+             *   O
+             *  / \
+             * /   \
+             * 
+             */
+
             int obliqui1 = 0;
+            // up left
+            int tempcounter = Math.min(Math.min(x,K-1),M-y-1);
+            for (int i = 0; i < tempcounter; i++) {
+                if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P1) {
+                    obliqui1 = 0;
+                }
+                else {
+                    if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P2) {
+                        obliqui1++;
+                    }
+                }
+            }
+            //down right
+            tempcounter = Math.min(Math.min(N-x-1,K-1),y);
+            for (int i = 1; i <= tempcounter; i++) {
+                if (B.cellState(y-i,x+i) == CXCellState.P1) {
+                    break;
+                }
+                else {
+                    if (B.cellState(y-i,x+i) == CXCellState.P2) {
+                        obliqui1++;
+                    }
+                }
+            }
+
+            int obliqui2 = 0;
+            //down left
+            tempcounter = Math.min(Math.min(x,K-1),y);
+            for (int i = 0; i < tempcounter; i++) {
+                if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P1) {
+                    obliqui2 = 0;
+                }
+                else {
+                    if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P2) {
+                        obliqui2++;
+                    }
+                }
+            }
+            //up right
+            tempcounter = Math.min(Math.min(N-x-1,K-1),M-y-1);
+            for (int i = 1; i <= tempcounter; i++) {
+                if (B.cellState(y+i,x+i) == CXCellState.P1) {
+                    break;
+                }
+                else {
+                    if (B.cellState(y+i,x+i) == CXCellState.P2) {
+                        obliqui2++;
+                    }
+                }
+            }
             
 
-            punteggio = punteggio - 1000*laterali - 1000*verticali - 1000*obliqui1;
+            punteggio = punteggio - 1000*laterali*laterali - 1000*verticali*laterali - 1000*obliqui1*obliqui1 - 1000*obliqui2*obliqui2;
             return punteggio;
 
             

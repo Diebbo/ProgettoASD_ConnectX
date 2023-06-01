@@ -3,7 +3,7 @@ import java.util.concurrent.TimeoutException;
 public class CXFardoPlayer implements CXPlayer{
     private boolean first;
     private Integer selectedColumn;
-    private Integer startingDepth = 11;
+    private Integer startingDepth = 9;
     private int TIMEOUT;
     private long START;
     private int M;
