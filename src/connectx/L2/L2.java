@@ -202,7 +202,7 @@ public class L2 implements CXPlayer{
             if (obbligatorie.size() > 1) {
                 return Integer.MIN_VALUE+2;
             }
-            punteggio = punteggio - 1000*obbligatorie.size();
+            punteggio = punteggio - 10000*obbligatorie.size();
 
             //Inizio center bias
             CXCell ultimaMossa = B.getLastMove();
@@ -505,8 +505,6 @@ public class L2 implements CXPlayer{
 
             punteggio = punteggio - 1000*laterali*laterali - 1000*verticali*laterali - 1000*obliqui1*obliqui1 - 1000*obliqui2*obliqui2;
             return punteggio;
-
-            
         }
     }
 
