@@ -36,17 +36,11 @@ public class L2 implements CXPlayer{
 
 
 	public int selectColumn(CXBoard B) {
-        
-		
         //IterativeDeepening(B, first);
-        if (B.numOfMarkedCells()==0) {
-            return N/2;
-        }
-        else {
-            return alphaBetaCaller(B, startingDepth, first);
-        }
-        
-
+        if (B.numOfMarkedCells() == 0) 
+            return N/2; //  posizione centrale
+        else
+            return alphaBetaCaller(B, startingDepth, first); 
 	}
 
 
@@ -59,31 +53,22 @@ public class L2 implements CXPlayer{
 			throw new TimeoutException();
 	} 
 
-
-
     private int stateConverter(CXGameState state) {
-        if (state == CXGameState.WINP1) {
+        if (state == CXGameState.WINP1)
             return Integer.MAX_VALUE;
-        }
-        else if (state == CXGameState.WINP2) {
+        
+        if (state == CXGameState.WINP2)
             return Integer.MIN_VALUE;
-        }
-        else {
-            return 0;
-        }
+         
+        return 0;
     }
 
 
     private int alphaBetaCaller (CXBoard B, int depth, boolean playerA) {
         Integer[] columns = B.getAvailableColumns();
-        int eval;
+        int eval = playerA ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         int move = columns[0];
-        if (playerA) {
-            eval = Integer.MIN_VALUE;
-        }
-        else {
-            eval = Integer.MAX_VALUE;
-        } 
+
         for (Integer c : columns) {
             B.markColumn(c);
             int recEval = AlphaBetaForbiddenColumns(B, !playerA, Integer.MIN_VALUE, Integer.MAX_VALUE, depth-1);
@@ -104,7 +89,6 @@ public class L2 implements CXPlayer{
                     eval = recEval;
                     move = c;
                 }
-                
             }
             else {
                 //recEval = recEval + centerBias;
@@ -119,16 +103,10 @@ public class L2 implements CXPlayer{
     }
 
 
-
-
-
-
-
-
     //static eval basata sul numero di colonne proibite
     public int staticEval(CXBoard B,boolean playerA){
         // usando AphaBeta posso assumere: non ho vinto ne perso e tocca a me.
-        if (playerA) { ///////////////////////////////////////////////////////Analisi per il maximizer
+        if (playerA) { /////////////////////////////////////////////////////// Analisi per il maximizer
 
             int punteggio = 0;
             Integer[] columns = B.getAvailableColumns();
@@ -153,11 +131,13 @@ public class L2 implements CXPlayer{
             for (Integer c : columns) {
                 B.markColumn(c);
                 CXGameState state = B.gameState();
-                if (state != CXGameState.OPEN) { // mie possibili win in 1
+                
+                if (state != CXGameState.OPEN) { // colonne che mi portano alla fine di una partita
                     B.unmarkColumn();
                     return stateConverter(state);
                 }
-                if ((!B.fullColumn(c))&& B.gameState() == CXGameState.OPEN) { // seconda metà dell' and è ridondante (credo)
+
+                if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) { // seconda metà dell' and è ridondante (credo)
                     B.markColumn(c);
                     if (B.gameState() == CXGameState.WINP2) {
                         
