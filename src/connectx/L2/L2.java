@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class L2 implements CXPlayer{
+    final int ADJWEIGHT = 1000;
     private boolean first;
     private Integer startingDepth = 8;
     private int TIMEOUT;
@@ -118,6 +119,87 @@ public class L2 implements CXPlayer{
         return stateConverter(state);
     }
 
+    private int checkAdjacensies(CXBoard B, int x, int y, CXCellState winningPlayer){
+        //controllo orizzontale, ricordo che SO di non aver vinto.
+        int laterali = 0;
+        for (int i = Math.max(0, x - K + 2); i < Math.min(M, x + K - 2); i++) {
+            if (B.cellState(y, i) == winningPlayer)
+                laterali++;
+            else if (B.cellState(y, i) != CXCellState.FREE) {
+                if (i < x) // vitto spiegami sto controllo
+                    laterali = 0;
+                else 
+                    break;
+            }
+            
+        }
+        //controllo verticale
+        int verticali = 0;
+        for (int i = 0; i < Math.min(y, K - 2); i++) {
+            if (B.cellState(y - i, x) == winningPlayer) 
+                verticali++;
+            else if (B.cellState(y - i, x) != CXCellState.FREE)
+                break;
+        }
+        //controllo diagonale da fare : quattro cicli che controllano le quattro mezze diagonali possibili
+        /*
+            * \   /   //esploro così, prima la diagonale da sinistra a destra verso il basso poi quella da destra a sinistra verso l'alto
+            *  \ /
+            *   O
+            *  / \
+            * /   \
+            * 
+            */
+
+        int obliqui1 = 0;
+        // up left
+        int tempcounter = Math.min(Math.min(x,K-1),M-y-1);
+        for (int i = 0; i < tempcounter; i++) {
+            if (B.cellState(y+tempcounter-i, x-tempcounter+i) == winningPlayer)
+                obliqui1++;
+            else if (B.cellState(y+tempcounter-i, x-tempcounter+i) != CXCellState.FREE) 
+                obliqui1 = 0;
+                // credo di star controllando colonne inutili dopo aver trovato una pedina avversaria
+        }
+        //down right
+        tempcounter = Math.min(Math.min(N-x-1,K-1),y);
+        for (int i = 1; i <= tempcounter; i++) {
+            if (B.cellState(y-i,x+i) == winningPlayer)
+                obliqui1++;
+            else if (B.cellState(y-i,x+i) != CXCellState.FREE)
+                break;
+        }
+
+        int obliqui2 = 0;
+        //down left
+        tempcounter = Math.min(Math.min(x,K-1),y);
+        for (int i = 0; i < tempcounter; i++) {
+            if (B.cellState(y-tempcounter+i,x-tempcounter+i) == winningPlayer)
+                obliqui2++;
+            else if (B.cellState(y-tempcounter+i,x-tempcounter+i) != CXCellState.FREE)
+                obliqui2 = 0;
+
+        }
+        //up right
+        tempcounter = Math.min(Math.min(N-x-1,K-1),M-y-1);
+        for (int i = 1; i <= tempcounter; i++) {
+            if (B.cellState(y+i,x+i) == winningPlayer)
+                obliqui2++;
+            else if (B.cellState(y+i,x+i) != CXCellState.FREE)
+                break;
+        }
+        
+        /* return ADJWEIGHT*laterali*laterali 
+                + ADJWEIGHT*verticali*verticali 
+                + ADJWEIGHT*obliqui1*obliqui1 
+                + ADJWEIGHT*obliqui2*obliqui2;
+        raccolgo -> */
+        return ADJWEIGHT*(laterali*laterali + 
+                                    verticali*verticali + 
+                                    obliqui1*obliqui1 + 
+                                    obliqui2*obliqui2);
+    }
+
     private int maximizerStaticEval(CXBoard B){
        int punteggio = 0;
         Integer[] columns = B.getAvailableColumns();
@@ -152,7 +234,7 @@ public class L2 implements CXPlayer{
             }
             B.unmarkColumn();
         }
-        punteggio = punteggio - (100*colonne_proibite*colonne_proibite);
+        punteggio = punteggio - (100 * colonne_proibite * colonne_proibite);
         /////////////////////////////////////////////////fine colonne proibite.
 
         //colonne obbligate MIE, posso assumere di averne libere più di una.
@@ -198,101 +280,10 @@ public class L2 implements CXPlayer{
         }
         centerBias =  centerBias*10;
         punteggio = punteggio - centerBias;
+        
         ///////////Adjacensies check (è una valutazione più sulla mossa che sulla posizione ma cionondimeno la ritengo rilevante)
-        //controllo orizzontale, ricordo che SO di non aver vinto.
-        int y = ultimaMossa.i;
-        int x = ultimaMossa.j;
-        int laterali = 0;
-        for (int i = Math.max(0,x-K+2); i<Math.min(M,x+K-2);i++) {
-            if (B.cellState(y,i) == CXCellState.P2) {
-                if (i<x) {
-                    laterali = 0;
-                }
-                else {
-                    break;
-                }
-            }
-            else {
-                if (B.cellState(y,i) == CXCellState.P1) {
-                    laterali++;
-                }
-            }
-        }
-        //controllo verticale
-        int verticali = 0;
-        for (int i = 0; i< Math.min(y,K-2); i++) {
-            if (B.cellState(y-i,x) == CXCellState.P2) {
-                break;
-            }
-            else {
-                if (B.cellState(y-i,x) == CXCellState.P1) {
-                    verticali++;
-                }
-            }
-        }
-        //controllo diagonale da fare : quattro cicli che controllano le quattro mezze diagonali possibili
-        /*
-            * \   /   //esploro così, prima la diagonale da sinistra a destra verso il basso poi quella da destra a sinistra verso l'alto
-            *  \ /
-            *   O
-            *  / \
-            * /   \
-            * 
-            */
+        punteggio +=  this.checkAdjacensies(B, ultimaMossa.j, ultimaMossa.i, CXCellState.P1);
 
-        int obliqui1 = 0;
-        // up left
-        int tempcounter = Math.min(Math.min(x,K-1),M-y-1);
-        for (int i = 0; i < tempcounter; i++) {
-            if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P2) {
-                obliqui1 = 0;
-            }
-            else {
-                if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P1) {
-                    obliqui1++;
-                }
-            }
-        }
-        //down right
-        tempcounter = Math.min(Math.min(N-x-1,K-1),y);
-        for (int i = 1; i <= tempcounter; i++) {
-            if (B.cellState(y-i,x+i) == CXCellState.P2) {
-                break;
-            }
-            else {
-                if (B.cellState(y-i,x+i) == CXCellState.P1) {
-                    obliqui1++;
-                }
-            }
-        }
-
-        int obliqui2 = 0;
-        //down left
-        tempcounter = Math.min(Math.min(x,K-1),y);
-        for (int i = 0; i < tempcounter; i++) {
-            if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P2) {
-                obliqui2 = 0;
-            }
-            else {
-                if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P1) {
-                    obliqui2++;
-                }
-            }
-        }
-        //up right
-        tempcounter = Math.min(Math.min(N-x-1,K-1),M-y-1);
-        for (int i = 1; i <= tempcounter; i++) {
-            if (B.cellState(y+i,x+i) == CXCellState.P2) {
-                break;
-            }
-            else {
-                if (B.cellState(y+i,x+i) == CXCellState.P1) {
-                    obliqui2++;
-                }
-            }
-        }
-
-        punteggio = punteggio + 1000*laterali*laterali + 1000*verticali*verticali + 1000*obliqui1*obliqui1 + 1000*obliqui2*obliqui2;
         return punteggio;
         
     }
@@ -308,6 +299,7 @@ public class L2 implements CXPlayer{
             return this.completeBoard(B, columns);
         
         //FINE TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         /////////////////////////////////////colonne proibite.
         for (Integer c : columns) {
             B.markColumn(c);
@@ -374,7 +366,10 @@ public class L2 implements CXPlayer{
         centerBias =  centerBias*10;
         punteggio = punteggio + centerBias;
         //Fine center bias
+        
         //controllo laterale
+        //punteggio +=  this.checkAdjacensies(B, ultimaMossa.j, ultimaMossa.i, CXCellState.P1);
+
         int y = ultimaMossa.i;
         int x = ultimaMossa.j;
         int laterali = 0;
@@ -419,11 +414,11 @@ public class L2 implements CXPlayer{
         // up left
         int tempcounter = Math.min(Math.min(x, K-1), M-y-1);
         for (int i = 0; i < tempcounter; i++) {
-            if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P1) {
+            if (B.cellState(y+tempcounter-i, x-tempcounter+i) == CXCellState.P1) {
                 obliqui1 = 0;
             }
             else {
-                if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P2) {
+                if (B.cellState(y+tempcounter-i, x-tempcounter+i) == CXCellState.P2) {
                     obliqui1++;
                 }
             }
