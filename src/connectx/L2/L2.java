@@ -39,8 +39,8 @@ public class L2 implements CXPlayer{
         //IterativeDeepening(B, first);
         if (B.numOfMarkedCells() == 0) 
             return N/2; //  posizione centrale
-        else
-            return alphaBetaCaller(B, startingDepth, first); 
+
+        return alphaBetaCaller(B, startingDepth, first); 
 	}
 
 
@@ -102,13 +102,8 @@ public class L2 implements CXPlayer{
         return move;
     }
 
-
-    //static eval basata sul numero di colonne proibite
-    public int staticEval(CXBoard B,boolean playerA){
-        // usando AphaBeta posso assumere: non ho vinto ne perso e tocca a me.
-        if (playerA) { /////////////////////////////////////////////////////// Analisi per il maximizer
-
-            int punteggio = 0;
+    private int maximizerStaticEval(CXBoard B){
+       int punteggio = 0;
             Integer[] columns = B.getAvailableColumns();
             //TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if (columns.length == 1){
@@ -291,314 +286,295 @@ public class L2 implements CXPlayer{
 
             punteggio = punteggio + 1000*laterali*laterali + 1000*verticali*verticali + 1000*obliqui1*obliqui1 + 1000*obliqui2*obliqui2;
             return punteggio;
-        }
+        
+    }
 
-        else {//////////////////////////////////////////////////////////Analisi per il minimizer
-            int punteggio = 0;
-            int colonne_proibite = 0;
-            Integer[] columns = B.getAvailableColumns();
-            //TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if (columns.length == 1){
-                //rimanme una sola linea di gioco possibilie, la porto fino alla sua conclusione e restituisco un valore esatto.
-                int iterazioni = 0;
-                int c = columns[0];
-                while((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN){
-                    B.markColumn(c);
-                    iterazioni++;
-                }
-                CXGameState state = B.gameState();
-                for (int i = 0; i <= iterazioni; i++) {
-                    B.unmarkColumn();
-                }
-                if (state == CXGameState.WINP1) {
-                    return Integer.MAX_VALUE;
+    private int minimizerStaticEval(CXBoard B) {
+        int punteggio = 0;
+        int colonne_proibite = 0;
+        Integer[] columns = B.getAvailableColumns();
+
+        //TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if (columns.length == 1){
+            //rimanme una sola linea di gioco possibilie, la porto fino alla sua conclusione e restituisco un valore esatto.
+            int iterazioni = 0;
+            int c = columns[0];
+            while((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN){
+                B.markColumn(c);
+                iterazioni++;
+            }
+            CXGameState state = B.gameState();
+            for (int i = 0; i <= iterazioni; i++) {
+                B.unmarkColumn();
+            }
+            if (state == CXGameState.WINP1) {
+                return Integer.MAX_VALUE;
+            }
+            else {
+                if (state == CXGameState.WINP2) {
+                    return Integer.MIN_VALUE;
                 }
                 else {
-                    if (state == CXGameState.WINP2) {
-                        return Integer.MIN_VALUE;
-                    }
-                    else {
-                        return 0;
-                    }
+                    return 0;
                 }
             }
-            //FINE TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            /////////////////////////////////////colonne proibite.
-            for (Integer c : columns) {
+        }
+        //FINE TEMPORANEO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        /////////////////////////////////////colonne proibite.
+        for (Integer c : columns) {
+            B.markColumn(c);
+            CXGameState state = B.gameState();
+            if (state != CXGameState.OPEN) {
+                B.unmarkColumn();
+                return stateConverter(state);  
+            }
+            if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) {
+                B.markColumn(c);
+                if (B.gameState() == CXGameState.WINP1) {
+                    
+                    //c diventa una colonna proibita PER ME p2
+                    colonne_proibite++;
+                }
+                B.unmarkColumn();
+                
+            }
+            B.unmarkColumn();
+        }
+        punteggio = punteggio + (100*colonne_proibite*colonne_proibite);
+        ///////////////////////////////////////////////fine colonne proibite.
+
+        ///////////colonne obbligate MIE, posso assumere di averne libere più di una.
+        List<Integer> obbligatorie = new ArrayList<Integer>();
+        B.markColumn(columns[0]);
+        Boolean isHead = true;
+        for (Integer c : columns) {
+            if (isHead) {
+                isHead = false;
+            }
+            else {
                 B.markColumn(c);
                 CXGameState state = B.gameState();
-                if (state != CXGameState.OPEN) {
-                    B.unmarkColumn();
-                    return stateConverter(state);  
-                }
-                if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) {
-                    B.markColumn(c);
-                    if (B.gameState() == CXGameState.WINP1) {
-                        
-                        //c diventa una colonna proibita PER ME p2
-                        colonne_proibite++;
-                    }
-                    B.unmarkColumn();
-                    
+                if (state == CXGameState.WINP1) {
+                    obbligatorie.add(c);
                 }
                 B.unmarkColumn();
             }
-            punteggio = punteggio + (100*colonne_proibite*colonne_proibite);
-            ///////////////////////////////////////////////fine colonne proibite.
-
-            ///////////colonne obbligate MIE, posso assumere di averne libere più di una.
-            List<Integer> obbligatorie = new ArrayList<Integer>();
-            B.markColumn(columns[0]);
-            Boolean isHead = true;
-            for (Integer c : columns) {
-                if (isHead) {
-                    isHead = false;
-                }
-                else {
-                    B.markColumn(c);
-                    CXGameState state = B.gameState();
-                    if (state == CXGameState.WINP1) {
-                        obbligatorie.add(c);
-                    }
-                    B.unmarkColumn();
-                }
-            }
-            B.unmarkColumn();
-            ///////////controllo la prima che avevo precedentemente escluso a tavolino
-            B.markColumn(columns[1]);
-            B.markColumn(columns[0]);
-            CXGameState state = B.gameState();
-            if (state == CXGameState.WINP1) {
-                obbligatorie.add(columns[0]);
-            }
-            B.unmarkColumn();
-            B.unmarkColumn();
-            if (obbligatorie.size() > 1) {
-                return Integer.MAX_VALUE-2;
-            }
-            punteggio = punteggio + 100000*obbligatorie.size();
-
-            //Inizio center bias
-            CXCell ultimaMossa = B.getLastMove();
-            // colonna = ultimaMossa.j
-            int n = N/2;
-            int centerBias  = ultimaMossa.j-n; // se è grande è lontano dal centro
-            if (centerBias < 0) {
-                centerBias = -centerBias;
-            }
-            centerBias =  centerBias*10;
-            punteggio = punteggio + centerBias;
-            //Fine center bias
-            //controllo laterale
-            int y = ultimaMossa.i;
-            int x = ultimaMossa.j;
-            int laterali = 0;
-            for (int i = Math.max(0,x-K+2); i<Math.min(M,x+K-2);i++) {
-                if (B.cellState(y,i) == CXCellState.P1) {
-                    if (i<x) {
-                        laterali = 0;
-                    }
-                    else {
-                        break;
-                    }
-                }
-                else {
-                    if (B.cellState(y,i) == CXCellState.P2) {
-                        laterali++;
-                    }
-                }
-            }
-            //controllo verticale
-            int verticali = 0;
-            for (int i = 0; i< Math.min(y,K-2); i++) {
-                if (B.cellState(y-i,x) == CXCellState.P1) {
-                    break;
-                }
-                else {
-                    if (B.cellState(y-i,x) == CXCellState.P2) {
-                        verticali++;
-                    }
-                }
-            }
-            //controllo diagonale da fare (rn non ho voglia)
-            /*
-             * \   /   //esploro così, prima la diagonale da sinistra a destra verso il basso poi quella da destra a sinistra verso l'alto
-             *  \ /
-             *   O
-             *  / \
-             * /   \
-             * 
-             */
-
-            int obliqui1 = 0;
-            // up left
-            int tempcounter = Math.min(Math.min(x,K-1),M-y-1);
-            for (int i = 0; i < tempcounter; i++) {
-                if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P1) {
-                    obliqui1 = 0;
-                }
-                else {
-                    if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P2) {
-                        obliqui1++;
-                    }
-                }
-            }
-            //down right
-            tempcounter = Math.min(Math.min(N-x-1,K-1),y);
-            for (int i = 1; i <= tempcounter; i++) {
-                if (B.cellState(y-i,x+i) == CXCellState.P1) {
-                    break;
-                }
-                else {
-                    if (B.cellState(y-i,x+i) == CXCellState.P2) {
-                        obliqui1++;
-                    }
-                }
-            }
-
-            int obliqui2 = 0;
-            //down left
-            tempcounter = Math.min(Math.min(x,K-1),y);
-            for (int i = 0; i < tempcounter; i++) {
-                if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P1) {
-                    obliqui2 = 0;
-                }
-                else {
-                    if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P2) {
-                        obliqui2++;
-                    }
-                }
-            }
-            //up right
-            tempcounter = Math.min(Math.min(N-x-1,K-1),M-y-1);
-            for (int i = 1; i <= tempcounter; i++) {
-                if (B.cellState(y+i,x+i) == CXCellState.P1) {
-                    break;
-                }
-                else {
-                    if (B.cellState(y+i,x+i) == CXCellState.P2) {
-                        obliqui2++;
-                    }
-                }
-            }
-            
-
-            punteggio = punteggio - 1000*laterali*laterali - 1000*verticali*laterali - 1000*obliqui1*obliqui1 - 1000*obliqui2*obliqui2;
-            return punteggio;
         }
+        B.unmarkColumn();
+        ///////////controllo la prima che avevo precedentemente escluso a tavolino
+        B.markColumn(columns[1]);
+        B.markColumn(columns[0]);
+        CXGameState state = B.gameState();
+        if (state == CXGameState.WINP1) {
+            obbligatorie.add(columns[0]);
+        }
+        B.unmarkColumn();
+        B.unmarkColumn();
+        if (obbligatorie.size() > 1) {
+            return Integer.MAX_VALUE-2;
+        }
+        punteggio = punteggio + 100000*obbligatorie.size();
+
+        //Inizio center bias
+        CXCell ultimaMossa = B.getLastMove();
+        // colonna = ultimaMossa.j
+        int n = N/2;
+        int centerBias  = ultimaMossa.j-n; // se è grande è lontano dal centro
+        if (centerBias < 0) {
+            centerBias = -centerBias;
+        }
+        centerBias =  centerBias*10;
+        punteggio = punteggio + centerBias;
+        //Fine center bias
+        //controllo laterale
+        int y = ultimaMossa.i;
+        int x = ultimaMossa.j;
+        int laterali = 0;
+        for (int i = Math.max(0,x-K+2); i<Math.min(M,x+K-2);i++) {
+            if (B.cellState(y,i) == CXCellState.P1) {
+                if (i<x) {
+                    laterali = 0;
+                }
+                else {
+                    break;
+                }
+            }
+            else {
+                if (B.cellState(y,i) == CXCellState.P2) {
+                    laterali++;
+                }
+            }
+        }
+        //controllo verticale
+        int verticali = 0;
+        for (int i = 0; i< Math.min(y,K-2); i++) {
+            if (B.cellState(y-i,x) == CXCellState.P1) {
+                break;
+            }
+            else {
+                if (B.cellState(y-i,x) == CXCellState.P2) {
+                    verticali++;
+                }
+            }
+        }
+        //controllo diagonale da fare (rn non ho voglia)
+        /*
+            * \   /   //esploro così, prima la diagonale da sinistra a destra verso il basso poi quella da destra a sinistra verso l'alto
+            *  \ /
+            *   O
+            *  / \
+            * /   \
+            * 
+            */
+
+        int obliqui1 = 0;
+        // up left
+        int tempcounter = Math.min(Math.min(x,K-1),M-y-1);
+        for (int i = 0; i < tempcounter; i++) {
+            if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P1) {
+                obliqui1 = 0;
+            }
+            else {
+                if (B.cellState(y+tempcounter-i,x-tempcounter+i) == CXCellState.P2) {
+                    obliqui1++;
+                }
+            }
+        }
+        //down right
+        tempcounter = Math.min(Math.min(N-x-1,K-1),y);
+        for (int i = 1; i <= tempcounter; i++) {
+            if (B.cellState(y-i,x+i) == CXCellState.P1) {
+                break;
+            }
+            else {
+                if (B.cellState(y-i,x+i) == CXCellState.P2) {
+                    obliqui1++;
+                }
+            }
+        }
+
+        int obliqui2 = 0;
+        //down left
+        tempcounter = Math.min(Math.min(x,K-1),y);
+        for (int i = 0; i < tempcounter; i++) {
+            if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P1) {
+                obliqui2 = 0;
+            }
+            else {
+                if (B.cellState(y-tempcounter+i,x-tempcounter+i) == CXCellState.P2) {
+                    obliqui2++;
+                }
+            }
+        }
+        //up right
+        tempcounter = Math.min(Math.min(N-x-1,K-1),M-y-1);
+        for (int i = 1; i <= tempcounter; i++) {
+            if (B.cellState(y+i,x+i) == CXCellState.P1) {
+                break;
+            }
+            else {
+                if (B.cellState(y+i,x+i) == CXCellState.P2) {
+                    obliqui2++;
+                }
+            }
+        }
+        
+
+        punteggio = punteggio - 1000*laterali*laterali - 1000*verticali*laterali - 1000*obliqui1*obliqui1 - 1000*obliqui2*obliqui2;
+        return punteggio;
     }
 
+    //static eval basata sul numero di colonne proibite
+    public int staticEval(CXBoard B,boolean playerA){
+        // usando AphaBeta posso assumere: non ho vinto ne perso e tocca a me.
+       
+        if (playerA) // Analisi per il maximizer
+            return this.maximizerStaticEval(B);
 
-
-
-
-
-
-
+        else  // Analisi per il minimizer
+            return this.minimizerStaticEval(B);
+        
+    }
 
     //un alpha beta pruning che funziona e deve essere chiamato dalla funzione alphaBetaCaller!!!
     public int AlphaBetaForbiddenColumns(CXBoard T, boolean playerA, int alpha, int beta, int depth) {
-        if (T.gameState() == CXGameState.WINP1) {
+
+        // caso base - condizioni preliminari
+        if (T.gameState() == CXGameState.WINP1) 
             return Integer.MAX_VALUE;
+        
+        if (T.gameState() == CXGameState.WINP2) 
+            return Integer.MIN_VALUE;
+        
+        if (depth == 0) //lol questa condizione andrebbe scambiata con quella sotto :) - fatto stupido gay
+            return staticEval(T, playerA);
+        
+        if (T.gameState() == CXGameState.DRAW)
+            return 0;
+        
+    
+        Integer[] columns = T.getAvailableColumns();
+
+        //rimanme una sola linea di gioco possibilie, la porto fino alla sua conclusione e restituisco un valore esatto.
+        if (columns.length == 1){
+            
+            int iterazioni = 0;
+            int c = columns[0];
+            while((!T.fullColumn(c)) && T.gameState() == CXGameState.OPEN){
+                T.markColumn(c);
+                iterazioni++;
+            }
+            CXGameState state = T.gameState();
+            for (int i = 0; i <= iterazioni; i++) {
+                T.unmarkColumn();
+            }
+            return stateConverter(state);
         }
-        else {
-            if (T.gameState() == CXGameState.WINP2) {
-                return Integer.MIN_VALUE;
-            }
-            else {
-                if (T.gameState() == CXGameState.DRAW) {
-                    return 0;
+        
+        // caso generico
+        int eval;
+        if (playerA) { // MAX player
+            eval = Integer.MIN_VALUE;
+            for (Integer c : columns) {
+                T.markColumn(c);
+                int recEval = AlphaBetaForbiddenColumns(T, false, alpha, beta, depth - 1); //calcolo il massimo in questo modo per poter aggiornare la colonna selezionata
+                if (recEval > eval) {                                              //quando necessario.
+                    eval = recEval;
                 }
-                else {
-                    if (depth == 0) {
-
-                        //lol questa condizione andrebbe scambiata con quella sotto :)
-                        int eval = staticEval(T, playerA);
-                        return eval;
-                    } 
-                    else { 
-                        Integer[] columns = T.getAvailableColumns();
-                        if (columns.length == 1){
-                            //rimanme una sola linea di gioco possibilie, la porto fino alla sua conclusione e restituisco un valore esatto.
-                            int iterazioni = 0;
-                            int c = columns[0];
-                            while((!T.fullColumn(c)) && T.gameState() == CXGameState.OPEN){
-                                T.markColumn(c);
-                                iterazioni++;
-                            }
-                            CXGameState state = T.gameState();
-                            for (int i = 0; i <= iterazioni; i++) {
-                                T.unmarkColumn();
-                            }
-                            return stateConverter(state);
-                        }
-                        else {
-                            if (playerA) { /////////////////////// MAX player
-                                int eval = Integer.MIN_VALUE;
-                                for (Integer c : columns) {
-                                    T.markColumn(c);
-                                    int recEval = AlphaBetaForbiddenColumns(T, false, alpha, beta, depth - 1); //calcolo il massimo in questo modo per poter aggiornare la colonna selezionata
-                                    if (recEval > eval) {                                              //quando necessario.
-                                        eval = recEval;
-                                    }
-                                    alpha = Math.max(eval, alpha);
-                                    T.unmarkColumn();
-                                    if (beta <= alpha) { // β cutoff
-                                        break;
-                                    }
-                                }
-                                //un return che abbassa leggermente il peso delle mosse mentre si propagano (perdere in una mossa è peggio che perdere in 2 mosse)
-                                //return eval;
-                                ///* 
-                                if (eval > 1) {
-                                    return eval-1;
-                                }
-                                else {
-                                    if (eval < -1) {
-                                        return eval+1;
-                                    }
-                                    else {
-                                        return eval;
-                                    }
-                                }
-                                //*/
-                            } 
-
-                            else { //////////////////////////// MIN player
-                                int eval = Integer.MAX_VALUE;
-                                for (Integer c : columns) {
-                                    T.markColumn(c);
-                                    int recEval = AlphaBetaForbiddenColumns(T, true, alpha, beta, depth - 1); //calcolo il minimo in questo modo per poter aggiornare la colonna selezionata
-                                    if (recEval < eval) {                                             //quando necessario.
-                                        eval = recEval;
-                                    }
-                                    beta = Math.min(eval, beta);
-                                    T.unmarkColumn();
-                                    if (beta <= alpha) { // α cutoff
-                                        break;
-                                    }
-                                }
-                                //un return che abbassa leggermente il peso delle mosse mentre si propagano (perdere in una mossa è peggio che perdere in 2 mosse)
-                                //return eval;
-                                ///* 
-                                if (eval > 1) {
-                                    return eval-1;
-                                }
-                                else {
-                                    if (eval < -1) {
-                                        return eval+1;
-                                    }
-                                    else {
-                                        return eval;
-                                    }
-                                }
-                                //*/
-                            }
-                        }
-                    }
+                alpha = Math.max(eval, alpha);
+                T.unmarkColumn();
+                if (beta <= alpha) { // β cutoff
+                    break;
                 }
             }
-        } 
+            
+        } else { // MIN player
+            eval = Integer.MAX_VALUE;
+            for (Integer c : columns) {
+                T.markColumn(c);
+                int recEval = AlphaBetaForbiddenColumns(T, true, alpha, beta, depth - 1); //calcolo il minimo in questo modo per poter aggiornare la colonna selezionata
+                if (recEval < eval) {                                             //quando necessario.
+                    eval = recEval;
+                }
+                beta = Math.min(eval, beta);
+                T.unmarkColumn();
+                if (beta <= alpha) { // α cutoff
+                    break;
+                }
+            }
+            
+            
+        }
+
+        //un return che abbassa leggermente il peso delle mosse mentre si propagano (perdere in una mossa è peggio che perdere in 2 mosse)
+        //return eval;
+        
+        eval = eval < -1 ? eval+1 : eval;
+        eval = eval > 1 ? eval-1 : eval;
+        
+        return eval;
+
+    
     }
 
 
