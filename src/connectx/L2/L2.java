@@ -27,8 +27,8 @@ public class L2 implements CXPlayer{
     //temporanea copia del paleyr L0
 
 
-	public L2() {
-	}
+	public L2() {}
+
 	public void initPlayer(int M, int N, int K,  boolean first, int timeout_in_secs) {
         this.first = first;
         this.TIMEOUT = timeout_in_secs;
@@ -200,6 +200,31 @@ public class L2 implements CXPlayer{
                                     obliqui2*obliqui2);
     }
 
+    private int fobiddenColumnsCalculator(CXBoard B, Integer[] columns) {//, CXGameState opponentWinning){
+        int forbiddenColumnsNumber = 0;
+        for (Integer c : columns) {
+            B.markColumn(c);
+            CXGameState state = B.gameState();
+            if (state != CXGameState.OPEN) {
+                B.unmarkColumn();
+                return stateConverter(state);  
+            }
+            if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) {
+                B.markColumn(c);
+                if (B.gameState() == CXGameState.WINP2) {
+                    
+                    //c diventa una colonna proibita PER ME p2
+                    forbiddenColumnsNumber++;
+                }
+                B.unmarkColumn();
+                
+            }
+            B.unmarkColumn();
+        }
+
+        return forbiddenColumnsNumber;
+    }
+
     private int maximizerStaticEval(CXBoard B){
        int punteggio = 0;
         Integer[] columns = B.getAvailableColumns();
@@ -211,36 +236,36 @@ public class L2 implements CXPlayer{
         
         // ! FINE TEMPORANEO !
         
-        /////////////////////////////////////colonne proibite e win in 1.
-        int colonne_proibite = 0;
+        ///////////////////////////////////// colonne proibite e win in 1.
+        int forbiddenColumnsNumber = 0;
+
         for (Integer c : columns) {
             B.markColumn(c);
             CXGameState state = B.gameState();
-            
-            if (state != CXGameState.OPEN) { // colonne che mi portano alla fine di una partita
+            if (state != CXGameState.OPEN) {
                 B.unmarkColumn();
-                return stateConverter(state);
+                return stateConverter(state);  
             }
-
-            if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) { // seconda metà dell' and è ridondante (credo)
+            if ((!B.fullColumn(c)) && B.gameState() == CXGameState.OPEN) {
                 B.markColumn(c);
                 if (B.gameState() == CXGameState.WINP2) {
                     
-                    //c diventa una colonna proibita PER ME p1
-                    colonne_proibite++;
+                    //c diventa una colonna proibita PER ME p2
+                    forbiddenColumnsNumber++;
                 }
                 B.unmarkColumn();
                 
             }
             B.unmarkColumn();
-        }
-        punteggio = punteggio - (100 * colonne_proibite * colonne_proibite);
-        /////////////////////////////////////////////////fine colonne proibite.
+        } 
+        punteggio -= forbiddenColumnsNumber * forbiddenColumnsNumber * 100;
+
+        ///////////////////////////////////////////////// fine colonne proibite.
 
         //colonne obbligate MIE, posso assumere di averne libere più di una.
         List<Integer> obbligatorie = new ArrayList<Integer>();
         B.markColumn(columns[0]);
-        Boolean isHead = true;
+        boolean isHead = true;
         for (Integer c : columns) {
             if (isHead) {
                 isHead = false;
@@ -269,23 +294,25 @@ public class L2 implements CXPlayer{
         }
         punteggio = punteggio - 10000*obbligatorie.size();
 
-        //Inizio center bias
-        CXCell ultimaMossa = B.getLastMove();
-        // colonna = ultimaMossa.j
-        
-        int n = N/2;
-        int centerBias  = ultimaMossa.j-n; // se è grande è lontano dal centro
-        if (centerBias < 0) {
-            centerBias = -centerBias;
-        }
-        centerBias =  centerBias*10;
-        punteggio = punteggio - centerBias;
+        // center bias
+        CXCell lastMove = B.getLastMove();
+        punteggio += this.centerBiasCalculator(B, lastMove);
         
         ///////////Adjacensies check (è una valutazione più sulla mossa che sulla posizione ma cionondimeno la ritengo rilevante)
-        punteggio +=  this.checkAdjacensies(B, ultimaMossa.j, ultimaMossa.i, CXCellState.P1);
+        punteggio +=  this.checkAdjacensies(B, lastMove.j, lastMove.i, CXCellState.P1);
 
         return punteggio;
         
+    }
+
+    private int centerBiasCalculator(CXBoard B, CXCell lastMove){
+        int n = N/2;
+        int centerBias  = lastMove.j - n; // se è grande è lontano dal centro
+        if (centerBias < 0) {
+            centerBias = -centerBias;
+        }
+
+        return centerBias * 10; // 10 è un moltiplicatore arbitrario
     }
 
     private int minimizerStaticEval(CXBoard B) {
@@ -319,7 +346,8 @@ public class L2 implements CXPlayer{
                 
             }
             B.unmarkColumn();
-        }
+        } 
+        // colonne_proibite = fobiddenColumnsCalculator(B, columns, CXGameState.WINP1);
         punteggio = punteggio + (100*colonne_proibite*colonne_proibite);
         ///////////////////////////////////////////////fine colonne proibite.
 
@@ -355,20 +383,13 @@ public class L2 implements CXPlayer{
         }
         punteggio = punteggio + 100000*obbligatorie.size();
 
-        //Inizio center bias
-        CXCell ultimaMossa = B.getLastMove();
-        // colonna = ultimaMossa.j
-        int n = N/2;
-        int centerBias  = ultimaMossa.j-n; // se è grande è lontano dal centro
-        if (centerBias < 0) {
-            centerBias = -centerBias;
-        }
-        centerBias =  centerBias*10;
-        punteggio = punteggio + centerBias;
-        //Fine center bias
+        //center bias
+        CXCell lastMove = B.getLastMove();
+        punteggio += this.centerBiasCalculator(B, lastMove);
+
         
         //controllo laterale
-        punteggio +=  this.checkAdjacensies(B, ultimaMossa.j, ultimaMossa.i, CXCellState.P2);
+        punteggio +=  this.checkAdjacensies(B, lastMove.j, lastMove.i, CXCellState.P2);
 
         return punteggio;
     }
@@ -409,16 +430,16 @@ public class L2 implements CXPlayer{
             return this.completeBoard(T, columns);
         
         // caso generico
-        int eval;
+        int finalEval;
         if (playerA) { // MAX player
-            eval = Integer.MIN_VALUE;
+            finalEval = Integer.MIN_VALUE;
             for (Integer c : columns) {
                 T.markColumn(c);
-                int recEval = AlphaBetaForbiddenColumns(T, false, alpha, beta, depth - 1); //calcolo il massimo in questo modo per poter aggiornare la colonna selezionata
-                if (recEval > eval) {                                              //quando necessario.
-                    eval = recEval;
-                }
-                alpha = Math.max(eval, alpha);
+                int tempEval = AlphaBetaForbiddenColumns(T, false, alpha, beta, depth - 1); //calcolo il massimo in questo modo per poter aggiornare la colonna selezionata
+                if (tempEval > finalEval)                                               //quando necessario.
+                    finalEval = tempEval;
+                
+                alpha = Math.max(finalEval, alpha);
                 T.unmarkColumn();
                 if (beta <= alpha) { // β cutoff
                     break;
@@ -426,14 +447,14 @@ public class L2 implements CXPlayer{
             }
             
         } else { // MIN player
-            eval = Integer.MAX_VALUE;
+            finalEval = Integer.MAX_VALUE;
             for (Integer c : columns) {
                 T.markColumn(c);
-                int recEval = AlphaBetaForbiddenColumns(T, true, alpha, beta, depth - 1); //calcolo il minimo in questo modo per poter aggiornare la colonna selezionata
-                if (recEval < eval) {                                             //quando necessario.
-                    eval = recEval;
-                }
-                beta = Math.min(eval, beta);
+                int tempEval = AlphaBetaForbiddenColumns(T, true, alpha, beta, depth - 1); //calcolo il minimo in questo modo per poter aggiornare la colonna selezionata
+                if (tempEval < finalEval)                                            //quando necessario.
+                    finalEval = tempEval;
+                
+                beta = Math.min(finalEval, beta);
                 T.unmarkColumn();
                 if (beta <= alpha) { // α cutoff
                     break;
@@ -444,18 +465,15 @@ public class L2 implements CXPlayer{
         }
 
         //un return che abbassa leggermente il peso delle mosse mentre si propagano (perdere in una mossa è peggio che perdere in 2 mosse)
-        //return eval;
+        //return finalEval;
         
-        eval = eval < -1 ? eval+1 : eval;
-        eval = eval > 1 ? eval-1 : eval;
+        finalEval = finalEval < -1 ? finalEval+1 : finalEval;
+        finalEval = finalEval > 1 ? finalEval-1 : finalEval;
         
-        return eval;
+        return finalEval;
 
     
     }
-
-
-
 
     
     /* 
