@@ -19,6 +19,7 @@ public class L3 implements CXPlayer{
     private int lastDepthBeforeTimeout = 1;
     private int TIMEOUT;
     private long START;
+    private boolean runningOutOfTime = false;
     private int M; // numero di righe
     private int N; // numero di colonne
     private int K; // numero di pedine da allineare per vincere
@@ -48,33 +49,50 @@ public class L3 implements CXPlayer{
         return IterativeDeepening(B, first);
 	}
 
-
     private void checktime() throws TimeoutException {
         // se il tempo è minore di 1/N del timeout totale allora lancio l'eccezione
-        float remainingTime = ((float) (System.currentTimeMillis() - START) / 1000);
+        float timeSpent = ((float) (System.currentTimeMillis() - START) / 1000);
         float timePerMove = (float) TIMEOUT / N;
-        System.out.printf("remaining time: %.2f time per move %.2f\n", remainingTime, timePerMove);
-        if (remainingTime >= timePerMove) {
+        // System.out.printf("! remaining time: %.2f time per move %.2f\n", timeSpent, timePerMove);
+        if (timeSpent >= timePerMove) 
             throw new TimeoutException();
-        }
     }
 
-  public int IterativeDeepening(CXBoard B, boolean playerA) {
+
+    private void checktime(boolean fullTime) throws TimeoutException {
+        // se il tempo è minore di 1/N del timeout totale allora lancio l'eccezione
+        float timeSpent = ((float) (System.currentTimeMillis() - START) / 1000);
+        float timePerMove = (float) TIMEOUT / N;
+        // System.out.printf("! remaining time: %.2f time per move %.2f\n", timeSpent, timePerMove);
+        if(fullTime){
+            if(timeSpent >= TIMEOUT)
+                throw new TimeoutException();
+        } else {
+            if (timeSpent >= timePerMove) 
+                throw new TimeoutException();    
+        }
+    }
+    
+    public int IterativeDeepening(CXBoard B, boolean playerA) {
         START = System.currentTimeMillis();
         int depth = startingDepth;
         int move = B.getAvailableColumns()[0];
         while (true) {
             try {
-                System.out.println( "TIME : [" + (float) (System.currentTimeMillis() - START) / 1000 + " / " + (float) TIMEOUT + "s] DEPTH : [" + depth + "]");
+                System.out.println( " -- TIME : [" + (float) (System.currentTimeMillis() - START) / 1000 + " / " + (float) TIMEOUT + "s] DEPTH : [" + depth + "]");
                 checktime();
+                if(depth >= 9){
+                    runningOutOfTime = true;
+                }
                 move = alphaBetaCaller(B, depth, playerA);
                 lastDepthBeforeTimeout = depth;
                 depth++;
             } catch (TimeoutException e) {
-                System.out.println("timeout at depth: " + depth);
+                System.out.println("! timeout at depth: " + depth);
                 break;
             }
         }
+        runningOutOfTime = false;
         return move;
     }
 
@@ -93,12 +111,21 @@ public class L3 implements CXPlayer{
         return 0;
     }
 
-    private int alphaBetaCaller (CXBoard B, int depth, boolean playerA) {
+    private int alphaBetaCaller (CXBoard B, int depth, boolean playerA) { 
         Integer[] columns = B.getAvailableColumns();
         int eval = playerA ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         int move = columns[0];
 
         for (Integer c : columns) {
+            if (runningOutOfTime) {
+                try {
+                    checktime();
+                } catch (TimeoutException e) {
+                    System.out.println("! timeout at depth: " + depth + " column: " + c);
+                    break;
+                }
+            }
+            
             B.markColumn(c);
             int recEval = AlphaBetaForbiddenColumns(B, !playerA, Integer.MIN_VALUE, Integer.MAX_VALUE, depth-1);
             
@@ -111,9 +138,9 @@ public class L3 implements CXPlayer{
             }
             */
             
+            System.out.println("colonna: " + c + " eval: " + recEval);
             if (playerA) {
                 //recEval = recEval - centerBias;
-                System.out.println("colonna: " + c + " eval: " + recEval);
                 if (recEval > eval) {
                     eval = recEval;
                     move = c;
@@ -121,7 +148,6 @@ public class L3 implements CXPlayer{
             }
             else {
                 //recEval = recEval + centerBias;
-                System.out.println("colonna: " + c + " eval: " + recEval);
                 if (recEval < eval) {
                     eval = recEval;
                     move = c;
@@ -447,6 +473,14 @@ public class L3 implements CXPlayer{
         
         if (T.gameState() == CXGameState.DRAW)
             return 0;
+
+        if (runningOutOfTime){
+            try{
+                checktime(true);
+            } catch (TimeoutException e){
+                return Integer.MIN_VALUE;
+            }
+        }
         
     
         Integer[] columns = T.getAvailableColumns();
