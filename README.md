@@ -19,49 +19,48 @@ The `JAVA PROJECTS` view allows you to manage your dependencies. More details ca
 
 ## Commands for the API
 
-- Command-line compile.  In the connectx/ directory run::
+- Command-line compile. In the connectx/ directory run::
 
-		javac -cp ".." *.java */*.java
-		javac -cp ".." L2/L2.java
-		javac -cp ".." CXFardoPlayer.java CXFardoPlayer.java
-
+      javac -cp ".." *.java */*.java
+      javac -cp ".." L2/L2.java
+      javac -cp ".." CXFardoPlayer.java CXFardoPlayer.java
 
 CXGame application:
 
-- Human vs Computer.  In the connectx/ directory run:
-	
-		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
-		java -cp ".." connectx.CXGame 6 7 4 connectx.L2.L2
-		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer
+- Human vs Computer. In the connectx/ directory run:
+
+      java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0
+      java -cp ".." connectx.CXGame 6 7 4 connectx.L2.L2
+      java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer
 
 - Computer vs Computer. In the connectx/ directory run:
 
-		java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
-		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L1.L1
-		java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L2.L2
-		java -cp ".." connectx.CXGame 6 7 4 connectx.L2.L2 connectx.L1.L1
-
+      java -cp ".." connectx.CXGame 6 7 4 connectx.L0.L0 connectx.L1.L1
+      java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L1.L1
+      java -cp ".." connectx.CXGame 6 7 4 connectx.CXFardoPlayer connectx.L2.L2
+      java -cp ".." connectx.CXGame 6 7 4 connectx.L2.L2 connectx.L1.L1
+      java -cp ".." connectx.CXGame 6 7 4 connectx.L3.L3 connectx.L1.L1
 
 CXPlayerTester application:
 
 - Output score only:
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.CXFardoPlayer connectx.L2.L2
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L2.L2 connectx.CXFardoPlayer
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.CXFardoPlayer
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L2.L2 connectx.L1.L1
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.L2.L2
-
-
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.CXFardoPlayer connectx.L2.L2
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L2.L2 connectx.CXFardoPlayer
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.CXFardoPlayer
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L2.L2 connectx.L1.L1
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L1.L1 connectx.L2.L2
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L3.L3 connectx.L1.L1
 
 - Verbose output
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
-
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v
 
 - Verbose output and customized timeout (1 sec) and number of game repetitions (10 rounds)
 
-	java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L0.L0 connectx.L1.L1 -v -t 1 -r 10
+
+  java -cp ".." connectx.CXPlayerTester 6 7 4 connectx.L3.L3 connectx.L1.L1 -v -t 10 -r 10
 
 ## vitto unico che lavora
