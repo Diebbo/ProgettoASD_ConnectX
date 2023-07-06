@@ -77,20 +77,24 @@ public class L3 implements CXPlayer{
         START = System.currentTimeMillis();
         int depth = startingDepth;
         int move = B.getAvailableColumns()[0];
+        int lastValidMove = move;
         while (true) {
             try {
                 System.out.println( " -- TIME : [" + (float) (System.currentTimeMillis() - START) / 1000 + " / " + (float) TIMEOUT + "s] DEPTH : [" + depth + "]");
                 checktime();
-                if(depth >= 9){
+                if(depth >= 9)
                     runningOutOfTime = true;
-                }
+                 
                 move = alphaBetaCaller(B, depth, playerA);
                 lastDepthBeforeTimeout = depth;
                 depth++;
+                lastValidMove = move;
             } catch (TimeoutException e) {
                 System.out.println("! timeout at depth: " + depth);
+                move = lastValidMove;
                 break;
             }
+
         }
         runningOutOfTime = false;
         return move;
@@ -138,7 +142,7 @@ public class L3 implements CXPlayer{
             }
             */
             
-            System.out.println("colonna: " + c + " eval: " + recEval);
+            System.out.printf("- c%d:[%d] ", c, recEval);
             if (playerA) {
                 //recEval = recEval - centerBias;
                 if (recEval > eval) {
@@ -154,6 +158,7 @@ public class L3 implements CXPlayer{
                 }
             }
         }
+        System.out.println("");
         return move;
     }
 
@@ -288,7 +293,7 @@ public class L3 implements CXPlayer{
         
         // ! FINE TEMPORANEO !
         
-        ///////////////////////////////////// colonne proibite e win in 1.
+        // -- colonne proibite e win in 1.
         int forbiddenColumnsNumber = 0;
 
         for (Integer c : columns) {
@@ -312,9 +317,7 @@ public class L3 implements CXPlayer{
         } 
         punteggio -= forbiddenColumnsNumber * forbiddenColumnsNumber * 100;
 
-        ///////////////////////////////////////////////// fine colonne proibite.
-
-        //colonne obbligate MIE, posso assumere di averne libere più di una.
+        // -- colonne obbligate MIE, posso assumere di averne libere più di una.
         List<Integer> obbligatorie = new ArrayList<Integer>();
         B.markColumn(columns[0]);
         boolean isHead = true;
@@ -467,22 +470,21 @@ public class L3 implements CXPlayer{
         
         if (T.gameState() == CXGameState.WINP2) 
             return Integer.MIN_VALUE;
-        
-        if (depth == 0) 
-            return staticEval(T, playerA);
-        
+       
         if (T.gameState() == CXGameState.DRAW)
             return 0;
 
-        if (runningOutOfTime){
+        /* if (runningOutOfTime){
             try{
                 checktime(true);
             } catch (TimeoutException e){
                 return Integer.MIN_VALUE;
             }
-        }
+        } */
+
+        if (depth == 0) 
+            return staticEval(T, playerA);
         
-    
         Integer[] columns = T.getAvailableColumns();
 
         //rimanme una sola linea di gioco possibilie, la porto fino alla sua conclusione e restituisco un valore esatto.
